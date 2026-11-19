@@ -1,0 +1,53 @@
+# Build directories
+Build/
+build/
+cmake-build-*/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Compiled files
+*.obj
+*.exe
+*.dll
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.log
+
+# JUCE generated files
+JuceLibraryCode/
+Builds/
+
+# Plugin binaries
+*.vst3
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# User library (exclude user-imported samples)
+UserLibrary/
+
+# Test outputs
+Testing/Temporary/
