@@ -2,6 +2,7 @@
 #include "PluginEditor.h"
 
 #include <array>
+#include <atomic>
 #include <cmath>
 
 namespace Aetheria
@@ -21,8 +22,7 @@ class AetheriaVoice final : public juce::SynthesiserVoice
 {
 public:
     explicit AetheriaVoice(AetheriaProcessor& owner)
-        : processor(owner),
-          attackParameter(owner.parameters.getRawParameterValue("attack")),
+        : attackParameter(owner.parameters.getRawParameterValue("attack")),
           releaseParameter(owner.parameters.getRawParameterValue("release")),
           layerParameters {
               owner.parameters.getRawParameterValue("layerA"),
@@ -112,7 +112,6 @@ public:
     }
 
 private:
-    AetheriaProcessor& processor;
     std::atomic<float>* attackParameter = nullptr;
     std::atomic<float>* releaseParameter = nullptr;
     std::array<std::atomic<float>*, 4> layerParameters {};
