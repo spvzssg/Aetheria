@@ -113,6 +113,7 @@ private:
     double frequency = 440.0;
     float level = 0.0f;
 };
+} // namespace
 
 juce::AudioProcessorValueTreeState::ParameterLayout AetheriaProcessor::createParameterLayout()
 {
