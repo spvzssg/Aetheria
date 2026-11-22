@@ -21,7 +21,15 @@ class AetheriaVoice final : public juce::SynthesiserVoice
 {
 public:
     explicit AetheriaVoice(AetheriaProcessor& owner)
-        : processor(owner)
+        : processor(owner),
+          attackParameter(owner.parameters.getRawParameterValue("attack")),
+          releaseParameter(owner.parameters.getRawParameterValue("release")),
+          layerParameters {
+              owner.parameters.getRawParameterValue("layerA"),
+              owner.parameters.getRawParameterValue("layerB"),
+              owner.parameters.getRawParameterValue("layerC"),
+              owner.parameters.getRawParameterValue("layerD")
+          }
     {
     }
 
@@ -37,10 +45,10 @@ public:
         level = velocity;
         phase.fill(0.0);
         juce::ADSR::Parameters envelopeParameters;
-        envelopeParameters.attack = processor.parameters.getRawParameterValue("attack")->load();
+        envelopeParameters.attack = attackParameter->load();
         envelopeParameters.decay = 0.12f;
         envelopeParameters.sustain = 0.82f;
-        envelopeParameters.release = processor.parameters.getRawParameterValue("release")->load();
+        envelopeParameters.release = releaseParameter->load();
         envelope.setParameters(envelopeParameters);
         envelope.noteOn();
     }
@@ -68,12 +76,9 @@ public:
         if (sampleRate <= 0.0)
             return;
 
-        const std::array<float, 4> layerLevels {
-            processor.parameters.getRawParameterValue("layerA")->load(),
-            processor.parameters.getRawParameterValue("layerB")->load(),
-            processor.parameters.getRawParameterValue("layerC")->load(),
-            processor.parameters.getRawParameterValue("layerD")->load()
-        };
+        std::array<float, 4> layerLevels {};
+        for (size_t layer = 0; layer < layerLevels.size(); ++layer)
+            layerLevels[layer] = layerParameters[layer]->load();
 
         const std::array<double, 4> ratios { 0.5, 1.0, 2.0, 4.0 };
         const int channels = output.getNumChannels();
@@ -97,7 +102,7 @@ public:
                 mixed += (fundamental + harmonic) * static_cast<double>(layerLevels[layer]);
             }
 
-            const float value = static_cast<float>(mixed * 0.16) * amp;
+            const float value = static_cast<float>(mixed * 0.02) * amp;
             for (int channel = 0; channel < channels; ++channel)
                 output.addSample(channel, startSample + sample, value);
         }
@@ -108,6 +113,9 @@ public:
 
 private:
     AetheriaProcessor& processor;
+    std::atomic<float>* attackParameter = nullptr;
+    std::atomic<float>* releaseParameter = nullptr;
+    std::array<std::atomic<float>*, 4> layerParameters {};
     juce::ADSR envelope;
     std::array<double, 4> phase {};
     double frequency = 440.0;
