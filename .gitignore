@@ -51,3 +51,12 @@ UserLibrary/
 
 # Test outputs
 Testing/Temporary/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+*.vcxproj
+*.vcxproj.filters
+*.VC.VC.opendb
+*_artefacts/
