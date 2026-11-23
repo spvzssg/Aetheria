@@ -32,9 +32,9 @@ add_subdirectory("${JUCE_DIR}" "${CMAKE_BINARY_DIR}/JUCE")
 juce_add_plugin(Aetheria
     COMPANY_NAME "Spaz SsG"
     PLUGIN_MANUFACTURER_CODE SpSG
-    PLUGIN_CODE AeP2
-    PRODUCT_NAME "AETHERIA Phase 2"
-    BUNDLE_ID com.spazssg.aetheria.phase2
+    PLUGIN_CODE AeP3
+    PRODUCT_NAME "AETHERIA Phase 3"
+    BUNDLE_ID com.spazssg.aetheria.phase3
     VERSION "${PROJECT_VERSION}"
     FORMATS VST3
     IS_SYNTH TRUE
@@ -53,6 +53,9 @@ target_sources(Aetheria PRIVATE
     Source/Plugin/PluginProcessor.h
     Source/Plugin/PluginEditor.cpp
     Source/Plugin/PluginEditor.h
+    Source/Instruments/InstrumentRegistry.cpp
+    Source/Instruments/InstrumentRegistry.h
+    Source/Instruments/InstrumentTypes.h
 )
 
 target_compile_definitions(Aetheria PUBLIC
@@ -80,3 +83,36 @@ message(STATUS "AETHERIA ${PROJECT_VERSION}")
 message(STATUS "JUCE_DIR: ${JUCE_DIR}")
 message(STATUS "Plugin formats: VST3")
 message(STATUS "C++ standard: C++${CMAKE_CXX_STANDARD}")
+
+# Standalone instrument registry tests (no JUCE dependency).
+include(CTest)
+
+if(BUILD_TESTING)
+    add_executable(AetheriaInstrumentRegistryTests
+        Source/Instruments/InstrumentRegistry.cpp
+        Source/Instruments/InstrumentRegistry.h
+        Source/Instruments/InstrumentTypes.h
+        Source/Instruments/Tests/InstrumentRegistryTests.cpp
+    )
+
+    target_include_directories(AetheriaInstrumentRegistryTests PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source"
+    )
+
+    target_compile_features(AetheriaInstrumentRegistryTests PRIVATE
+        cxx_std_20
+    )
+
+    if(MSVC)
+        target_compile_options(AetheriaInstrumentRegistryTests PRIVATE
+            /W4
+            /permissive-
+            /Zc:__cplusplus
+        )
+    endif()
+
+    add_test(
+        NAME AetheriaInstrumentRegistryTests
+        COMMAND AetheriaInstrumentRegistryTests
+    )
+endif()

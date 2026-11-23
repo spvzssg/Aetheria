@@ -174,8 +174,12 @@ public:
             sources[layer] = sourceParameters[layer] != nullptr ? juce::jlimit(0, 4, juce::roundToInt(sourceParameters[layer]->load())) : 0;
             const double semitones = octaveParameters[layer]->load() * 12.0 + tuneParameters[layer]->load();
             phaseIncrements[layer] = twoPi * frequency * std::pow(2.0, semitones / 12.0) / sampleRate;
-            const double panAngle = (juce::jlimit(-1.0f, 1.0f, panParameters[layer]->load()) + 1.0)
-                                    * juce::MathConstants<double>::pi * 0.25;
+            // Use a perceptual taper so modest knob movements create a more
+            // noticeable stereo position change while preserving equal-power gains.
+            const double rawPan = static_cast<double>(juce::jlimit(-1.0f, 1.0f,
+                                                                  panParameters[layer]->load()));
+            const double shapedPan = std::copysign(std::pow(std::abs(rawPan), 0.70), rawPan);
+            const double panAngle = (shapedPan + 1.0) * juce::MathConstants<double>::pi * 0.25;
             panLeft[layer] = std::cos(panAngle);
             panRight[layer] = std::sin(panAngle);
             const bool solo = soloParameters[layer]->load() > 0.5f;
@@ -262,7 +266,7 @@ public:
                     }
                 }
 
-                sourceSample = layerFilters[layer].processSample(static_cast<float>(sourceSample));
+                sourceSample = layerFilters[layer].processSample(0, static_cast<float>(sourceSample));
                 const float layerAmp = layerEnvelopes[layer].getNextSample();
                 if (enabled[layer])
                 {
