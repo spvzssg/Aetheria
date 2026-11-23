@@ -4,80 +4,72 @@
 
 AETHERIA is a Windows VST3 generative hybrid instrument in development, built with C++20, JUCE 9, and CMake for FL Studio 25.
 
-## Current development status
+## Development status
 
-**Phase 1 foundation in progress.** This branch contains the first playable plugin foundation:
-- JUCE VST3 instrument target
-- 32-voice polyphonic synthesiser
-- Four oscillator layers: A Sub/Body, B Mid/Harmony, C Attack, D Air/Texture
-- MIDI note input and velocity response
-- Attack and release envelope controls
-- Master and per-layer level controls
-- JUCE parameter state serialization
-- Initial dark AETHERIA editor
+**Phase 2 — independent layer foundation.** This branch replaces the original four fixed-ratio sine oscillator mix with four separately selectable sound layers:
 
-This is an early playable foundation, not the finished AETHERIA instrument. Advanced synthesis engines, sample playback, generative prompt system, deterministic randomization, mutation, Sound DNA, effects, modulation, and the final reference-matched GUI remain future milestones.
+- **A — Sub / Body:** sine sub, triangle, saw, square, deep sub.
+- **B — Mid / Harmony:** warm saw, detuned saw, pulse, FM keys, sine.
+- **C — Attack / Transient:** pluck, FM bell, mallet, noise hit, click.
+- **D — Air / Texture:** white noise, pink-noise approximation, air/noise, sine cloud, crackle.
+- Independent amplitude envelopes (attack, decay, sustain, release) for each layer, with separate parameter state.
+- Per-layer source selection and level controls in the editor.
+- Existing 32-voice MIDI architecture, master level, global envelope, and JUCE state serialization retained.
+
+The current Phase 2 sources are lightweight first-pass algorithms implemented in AETHERIA's own voice renderer. They are **not yet** the DaisySP, Q, or DSPark engines, and the D-layer noise/air sources are not a full sample-based granular engine. These integrations are planned after API, build, and real-time-safety validation.
+
+## Planned engine integrations and research references
+
+- **DaisySP:** candidate for physical modeling, plucks, noise, granular player and synthesis modules. MIT-licensed; retain upstream notices.
+- **Cycfi Q:** candidate/reference for virtual analog, FM, resonant filters, envelopes and granular DSP. MIT-licensed; retain upstream notices.
+- **DSPark:** candidate for synthesizer, wavetable, sample, modulation, effects and analysis infrastructure. MIT-licensed; validate the exact v1.8.1 APIs and real-time behavior before adoption.
+- **TransDes:** candidate for transient shaping. MIT-licensed; retain attribution and inspect its algorithm provenance before incorporating code.
+- **Oi-Grandad, HISE, AudibleInstruments and Surge XT:** architectural and sound-design references only at this stage. Their GPL licensing means source code must not be copied into a proprietary distribution without an appropriate licensing decision.
 
 ## Build requirements
 
 - Windows 11 x64
 - Visual Studio 2026 Community with Desktop development with C++
-- CMake 3.22 or newer
+- CMake 4.2+ for the Visual Studio 18 2026 generator
 - Git
 - JUCE 9 source tree
-- Commercial JUCE licence for proprietary commercial distribution, or a deliberate decision to comply with AGPLv3
+- Appropriate JUCE commercial licence for proprietary distribution, or a deliberate decision to comply with AGPLv3
 
 ## Workspace layout
 
-Recommended local layout:
-
     D:\AETHERIA\
-      Dependencies\JUCE\       # Existing JUCE source
-      SourceRepo\               # Clone of this repository
-      Builds\VS2026\           # Generated build files
+      Dependencies\JUCE\
+      SourceRepo\
+      Builds\VS2026-Phase2\
 
 ## Configure and build (PowerShell)
 
-Clone the development branch:
+    cmake -S D:\AETHERIA\SourceRepo -B D:\AETHERIA\Builds\VS2026-Phase2 -G "Visual Studio 18 2026" -A x64 -DJUCE_DIR="D:/AETHERIA/Dependencies/JUCE"
 
-    git clone --branch phase-1-plugin-foundation https://github.com/spvzssg/Aetheria.git D:\AETHERIA\SourceRepo
+    cmake --build D:\AETHERIA\Builds\VS2026-Phase2 --config Release --parallel 4
 
-Configure with Visual Studio 2026:
+The VST3 bundle is generated under:
 
-    cmake -S D:\AETHERIA\SourceRepo -B D:\AETHERIA\Builds\VS2026 -G "Visual Studio 18 2026" -A x64 -DJUCE_DIR="D:/AETHERIA/Dependencies/JUCE"
+    D:\AETHERIA\Builds\VS2026-Phase2\Aetheria_artefacts\Release\VST3\
 
-Build Release:
+Confirm the actual path in build output before installing. Do not overwrite the existing Phase 1 plugin until Phase 2 passes its host tests.
 
-    cmake --build D:\AETHERIA\Builds\VS2026 --config Release --parallel 4
+## Audio architecture roadmap
 
-The expected VST3 bundle is under:
-
-    D:\AETHERIA\Builds\VS2026\Aetheria_artefacts\Release\VST3\
-
-Confirm the actual generated bundle path in the build output before copying it. Do not install over an existing plugin without checking its version first.
-
-## FL Studio 25 test
-
-1. Confirm the .vst3 bundle exists.
-2. Copy the bundle to the user VST3 folder or system VST3 folder only after the build succeeds.
-3. In FL Studio, open Options → Manage plugins and run a scan.
-4. Load AETHERIA as an instrument.
-5. Verify the editor opens and MIDI notes produce sound.
-6. Verify layer levels, master, attack, release, and project state recall.
-
-## Audio architecture
-
-The initial voice combines four independently adjustable oscillator layers:
-- **A — Sub / Body:** octave-down foundation
-- **B — Mid / Harmony:** fundamental
-- **C — Attack:** upper harmonic emphasis
-- **D — Air / Texture:** high partial layer
-
-The initial engine is intentionally small and CPU-conscious. It is a starting point for later engine abstraction, wavetable/FM/sample/granular sources, modulation, and effects.
+1. Four genuinely independent layer source engines and envelopes.
+2. Per-layer filters, pan, octave, pitch, solo/mute/lock and metering.
+3. DaisySP and/or DSPark integrations selected by feature and measured performance.
+4. Sample playback and full granular engine.
+5. Modulation, effects, deterministic seed/randomization, mutation, Sound DNA and presets.
+6. Reference-matched AETHERIA GUI and comprehensive host validation.
 
 ## Licensing
 
-JUCE modules are dual-licensed under AGPLv3 and the commercial JUCE licence. A proprietary commercial release must use an appropriate commercial JUCE licence or otherwise comply with the applicable open-source licence obligations. Review JUCE's current terms before distribution:
+JUCE modules are dual-licensed under AGPLv3 and the commercial JUCE licence. A proprietary commercial release must use an appropriate commercial JUCE licence or otherwise comply with applicable open-source obligations.
+
+Third-party components must retain their respective copyright and licence notices. MIT does not mean attribution can be omitted. GPL-licensed reference projects are not included in the Phase 2 build.
+
+Review JUCE's current terms:
 - https://juce.com/legal/juce-9-licence/
 - https://www.gnu.org/licenses/agpl-3.0.en.html
 
@@ -85,4 +77,4 @@ AETHERIA source code is proprietary to Spaz SsG unless a file explicitly states 
 
 ## Development branch
 
-The active foundation branch is phase-1-plugin-foundation. Keep development and build verification on this branch until the milestone is tested; do not merge into main until the VST3 builds and passes host smoke tests.
+Active branch: `phase-2-independent-layers`. Keep Phase 1 intact until this branch builds and passes FL Studio smoke tests. Do not merge into `main` before verification.
