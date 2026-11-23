@@ -184,7 +184,8 @@ public:
         for (int sample = 0; sample < numSamples; ++sample)
         {
             const float masterAmp = masterEnvelope.getNextSample() * level;
-            double mixed = 0.0;
+            double mixedLeft = 0.0;
+            double mixedRight = 0.0;
 
             for (size_t layer = 0; layer < 4; ++layer)
             {
@@ -261,14 +262,19 @@ public:
                 sourceSample = layerFilters[layer].processSample(static_cast<float>(sourceSample));
                 const float layerAmp = layerEnvelopes[layer].getNextSample();
                 if (enabled[layer])
-                    mixed += sourceSample * static_cast<double>(gains[layer] * layerAmp);
+                {
+                    const double pan = juce::jlimit(-1.0f, 1.0f, pans[layer]);
+                    const double angle = (pan + 1.0) * juce::MathConstants<double>::pi * 0.25;
+                    const double layerValue = sourceSample * static_cast<double>(gains[layer] * layerAmp);
+                    mixedLeft += layerValue * std::cos(angle);
+                    mixedRight += layerValue * std::sin(angle);
+                }
             }
 
-            const float value = static_cast<float>(mixed * 0.12) * masterAmp;
-            // Per-layer equal-power pan is applied below through the stereo accumulation path.
-            // The mono sum remains centered when all pan controls are at zero.
-            for (int channel = 0; channel < channels; ++channel)
-                output.addSample(channel, startSample + sample, value);
+            const float leftValue = static_cast<float>(mixedLeft * 0.12) * masterAmp;
+            const float rightValue = static_cast<float>(mixedRight * 0.12) * masterAmp;
+            if (channels > 0) output.addSample(0, startSample + sample, leftValue);
+            if (channels > 1) output.addSample(1, startSample + sample, rightValue);
 
             elapsedSeconds += 1.0 / sampleRate;
         }
