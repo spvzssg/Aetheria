@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -213,7 +214,9 @@ public:
             elapsedSeconds += 1.0 / sampleRate;
         }
 
-        if (!masterEnvelope.isActive())
+        const bool allLayersFinished = std::all_of(layerEnvelopes.begin(), layerEnvelopes.end(),
+                                                   [](const juce::ADSR& env) { return !env.isActive(); });
+        if (!masterEnvelope.isActive() && allLayersFinished)
             clearCurrentNote();
     }
 
