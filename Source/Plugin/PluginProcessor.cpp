@@ -163,7 +163,7 @@ public:
 
         std::array<float, 4> gains {};
         std::array<int, 4> sources {};
-        std::array<float, 4> pans {};
+        std::array<double, 4> phaseIncrements {}, panLeft {}, panRight {};
         std::array<bool, 4> enabled {};
         bool anySolo = false;
         for (size_t layer = 0; layer < gains.size(); ++layer)
@@ -172,7 +172,12 @@ public:
         {
             gains[layer] = layerLevels[layer]->load();
             sources[layer] = sourceParameters[layer] != nullptr ? juce::jlimit(0, 4, juce::roundToInt(sourceParameters[layer]->load())) : 0;
-            pans[layer] = panParameters[layer]->load();
+            const double semitones = octaveParameters[layer]->load() * 12.0 + tuneParameters[layer]->load();
+            phaseIncrements[layer] = twoPi * frequency * std::pow(2.0, semitones / 12.0) / sampleRate;
+            const double panAngle = (juce::jlimit(-1.0f, 1.0f, panParameters[layer]->load()) + 1.0)
+                                    * juce::MathConstants<double>::pi * 0.25;
+            panLeft[layer] = std::cos(panAngle);
+            panRight[layer] = std::sin(panAngle);
             const bool solo = soloParameters[layer]->load() > 0.5f;
             const bool muted = muteParameters[layer]->load() > 0.5f;
             enabled[layer] = !muted && (!anySolo || solo);
@@ -189,9 +194,7 @@ public:
 
             for (size_t layer = 0; layer < 4; ++layer)
             {
-                const double semitones = octaveParameters[layer]->load() * 12.0 + tuneParameters[layer]->load();
-                const double layerFrequency = frequency * std::pow(2.0, semitones / 12.0);
-                const double baseIncrement = twoPi * layerFrequency / sampleRate;
+                const double baseIncrement = phaseIncrements[layer];
                 phase[layer] += baseIncrement;
                 if (phase[layer] >= twoPi)
                     phase[layer] -= twoPi;
@@ -263,11 +266,9 @@ public:
                 const float layerAmp = layerEnvelopes[layer].getNextSample();
                 if (enabled[layer])
                 {
-                    const double pan = juce::jlimit(-1.0f, 1.0f, pans[layer]);
-                    const double angle = (pan + 1.0) * juce::MathConstants<double>::pi * 0.25;
                     const double layerValue = sourceSample * static_cast<double>(gains[layer] * layerAmp);
-                    mixedLeft += layerValue * std::cos(angle);
-                    mixedRight += layerValue * std::sin(angle);
+                    mixedLeft += layerValue * panLeft[layer];
+                    mixedRight += layerValue * panRight[layer];
                 }
             }
 
