@@ -33,10 +33,10 @@ public:
               owner.parameters.getRawParameterValue("layerD")
           },
           sourceParameters {
-              owner.parameters.getRawParameterValue("sourceA"),
-              owner.parameters.getRawParameterValue("sourceB"),
-              owner.parameters.getRawParameterValue("sourceC"),
-              owner.parameters.getRawParameterValue("sourceD")
+              dynamic_cast<juce::AudioParameterChoice*>(owner.parameters.getParameter("sourceA")),
+              dynamic_cast<juce::AudioParameterChoice*>(owner.parameters.getParameter("sourceB")),
+              dynamic_cast<juce::AudioParameterChoice*>(owner.parameters.getParameter("sourceC")),
+              dynamic_cast<juce::AudioParameterChoice*>(owner.parameters.getParameter("sourceD"))
           },
           envelopeParameters {{
               {{ owner.parameters.getRawParameterValue("A_Attack"), owner.parameters.getRawParameterValue("A_Decay"),
@@ -124,7 +124,7 @@ public:
         for (size_t layer = 0; layer < gains.size(); ++layer)
         {
             gains[layer] = layerLevels[layer]->load();
-            sources[layer] = juce::jlimit(0, 4, static_cast<int>(sourceParameters[layer]->load()));
+            sources[layer] = sourceParameters[layer] != nullptr ? sourceParameters[layer]->getIndex() : 0;
         }
 
         const int channels = output.getNumChannels();
@@ -235,7 +235,7 @@ private:
     std::atomic<float>* masterAttack = nullptr;
     std::atomic<float>* masterRelease = nullptr;
     std::array<std::atomic<float>*, 4> layerLevels {};
-    std::array<std::atomic<float>*, 4> sourceParameters {};
+    std::array<juce::AudioParameterChoice*, 4> sourceParameters {};
     std::array<std::array<std::atomic<float>*, 4>, 4> envelopeParameters {};
     juce::ADSR masterEnvelope;
     std::array<juce::ADSR, 4> layerEnvelopes;
