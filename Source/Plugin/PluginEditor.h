@@ -18,23 +18,33 @@ public:
 private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 
     AetheriaProcessor& audioProcessor;
-    std::array<juce::Slider, 7> sliders;
-    std::array<juce::Label, 7> labels;
-    std::array<std::unique_ptr<SliderAttachment>, 7> sliderAttachments;
+    std::array<juce::Slider, 27> sliders;
+    std::array<juce::Label, 27> labels;
+    std::array<std::unique_ptr<SliderAttachment>, 27> sliderAttachments;
     std::array<juce::ComboBox, 4> sourceSelectors;
     std::array<std::unique_ptr<ComboAttachment>, 4> sourceAttachments;
+    std::array<juce::ToggleButton, 8> layerButtons;
+    std::array<std::unique_ptr<ButtonAttachment>, 8> buttonAttachments;
 
-    const std::array<juce::String, 7> parameterIds {
-        "layerA", "layerB", "layerC", "layerD", "master", "attack", "release"
+    const std::array<juce::String, 27> parameterIds {
+        "layerA", "panA", "octaveA", "tuneA", "cutoffA", "resA",
+        "layerB", "panB", "octaveB", "tuneB", "cutoffB", "resB",
+        "layerC", "panC", "octaveC", "tuneC", "cutoffC", "resC",
+        "layerD", "panD", "octaveD", "tuneD", "cutoffD", "resD",
+        "master", "attack", "release"
     };
-    const std::array<juce::String, 7> displayNames {
-        "A  SUB / BODY", "B  MID / HARMONY", "C  ATTACK", "D  AIR / TEXTURE",
+    const std::array<juce::String, 27> displayNames {
+        "LEVEL", "PAN", "OCTAVE", "FINE TUNE", "FILTER", "RESONANCE",
+        "LEVEL", "PAN", "OCTAVE", "FINE TUNE", "FILTER", "RESONANCE",
+        "LEVEL", "PAN", "OCTAVE", "FINE TUNE", "FILTER", "RESONANCE",
+        "LEVEL", "PAN", "OCTAVE", "FINE TUNE", "FILTER", "RESONANCE",
         "MASTER", "MASTER ATTACK", "MASTER RELEASE"
     };
-    const std::array<juce::String, 4> sourceParameterIds {
-        "sourceA", "sourceB", "sourceC", "sourceD"
+    const std::array<juce::String, 8> buttonParameterIds {
+        "soloA", "muteA", "soloB", "muteB", "soloC", "muteC", "soloD", "muteD"
     };
     const std::array<juce::StringArray, 4> sourceNames {{
         { "Sine Sub", "Triangle", "Saw", "Square", "Deep Sub" },
