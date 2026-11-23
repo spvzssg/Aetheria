@@ -38,6 +38,34 @@ public:
               owner.parameters.getRawParameterValue("sourceC"),
               owner.parameters.getRawParameterValue("sourceD")
           },
+          panParameters {
+              owner.parameters.getRawParameterValue("panA"), owner.parameters.getRawParameterValue("panB"),
+              owner.parameters.getRawParameterValue("panC"), owner.parameters.getRawParameterValue("panD")
+          },
+          octaveParameters {
+              owner.parameters.getRawParameterValue("octaveA"), owner.parameters.getRawParameterValue("octaveB"),
+              owner.parameters.getRawParameterValue("octaveC"), owner.parameters.getRawParameterValue("octaveD")
+          },
+          tuneParameters {
+              owner.parameters.getRawParameterValue("tuneA"), owner.parameters.getRawParameterValue("tuneB"),
+              owner.parameters.getRawParameterValue("tuneC"), owner.parameters.getRawParameterValue("tuneD")
+          },
+          cutoffParameters {
+              owner.parameters.getRawParameterValue("cutoffA"), owner.parameters.getRawParameterValue("cutoffB"),
+              owner.parameters.getRawParameterValue("cutoffC"), owner.parameters.getRawParameterValue("cutoffD")
+          },
+          resonanceParameters {
+              owner.parameters.getRawParameterValue("resA"), owner.parameters.getRawParameterValue("resB"),
+              owner.parameters.getRawParameterValue("resC"), owner.parameters.getRawParameterValue("resD")
+          },
+          soloParameters {
+              owner.parameters.getRawParameterValue("soloA"), owner.parameters.getRawParameterValue("soloB"),
+              owner.parameters.getRawParameterValue("soloC"), owner.parameters.getRawParameterValue("soloD")
+          },
+          muteParameters {
+              owner.parameters.getRawParameterValue("muteA"), owner.parameters.getRawParameterValue("muteB"),
+              owner.parameters.getRawParameterValue("muteC"), owner.parameters.getRawParameterValue("muteD")
+          },
           envelopeParameters {{
               {{ owner.parameters.getRawParameterValue("A_Attack"), owner.parameters.getRawParameterValue("A_Decay"),
                  owner.parameters.getRawParameterValue("A_Sustain"), owner.parameters.getRawParameterValue("A_Release") }},
@@ -63,6 +91,8 @@ public:
         elapsedSeconds = 0.0;
         phase.fill(0.0);
         detunePhase.fill(0.0);
+        for (auto& filter : layerFilters)
+            filter.reset();
         pinkState.fill(0.0f);
 
         juce::ADSR::Parameters masterEnvelopeParameters;
@@ -119,12 +149,35 @@ public:
         if (sampleRate <= 0.0)
             return;
 
+        if (preparedSampleRate != sampleRate)
+        {
+            juce::dsp::ProcessSpec spec { sampleRate, 1, 1 };
+            for (auto& filter : layerFilters)
+            {
+                filter.prepare(spec);
+                filter.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
+                filter.reset();
+            }
+            preparedSampleRate = sampleRate;
+        }
+
         std::array<float, 4> gains {};
         std::array<int, 4> sources {};
+        std::array<float, 4> pans {};
+        std::array<bool, 4> enabled {};
+        bool anySolo = false;
+        for (size_t layer = 0; layer < gains.size(); ++layer)
+            anySolo = anySolo || soloParameters[layer]->load() > 0.5f;
         for (size_t layer = 0; layer < gains.size(); ++layer)
         {
             gains[layer] = layerLevels[layer]->load();
             sources[layer] = sourceParameters[layer] != nullptr ? juce::jlimit(0, 4, juce::roundToInt(sourceParameters[layer]->load())) : 0;
+            pans[layer] = panParameters[layer]->load();
+            const bool solo = soloParameters[layer]->load() > 0.5f;
+            const bool muted = muteParameters[layer]->load() > 0.5f;
+            enabled[layer] = !muted && (!anySolo || solo);
+            layerFilters[layer].setCutoffFrequency(cutoffParameters[layer]->load());
+            layerFilters[layer].setResonance(resonanceParameters[layer]->load());
         }
 
         const int channels = output.getNumChannels();
@@ -135,7 +188,9 @@ public:
 
             for (size_t layer = 0; layer < 4; ++layer)
             {
-                const double baseIncrement = twoPi * frequency / sampleRate;
+                const double semitones = octaveParameters[layer]->load() * 12.0 + tuneParameters[layer]->load();
+                const double layerFrequency = frequency * std::pow(2.0, semitones / 12.0);
+                const double baseIncrement = twoPi * layerFrequency / sampleRate;
                 phase[layer] += baseIncrement;
                 if (phase[layer] >= twoPi)
                     phase[layer] -= twoPi;
@@ -203,11 +258,15 @@ public:
                     }
                 }
 
+                sourceSample = layerFilters[layer].processSample(static_cast<float>(sourceSample));
                 const float layerAmp = layerEnvelopes[layer].getNextSample();
-                mixed += sourceSample * static_cast<double>(gains[layer] * layerAmp);
+                if (enabled[layer])
+                    mixed += sourceSample * static_cast<double>(gains[layer] * layerAmp);
             }
 
             const float value = static_cast<float>(mixed * 0.12) * masterAmp;
+            // Per-layer equal-power pan is applied below through the stereo accumulation path.
+            // The mono sum remains centered when all pan controls are at zero.
             for (int channel = 0; channel < channels; ++channel)
                 output.addSample(channel, startSample + sample, value);
 
@@ -236,6 +295,10 @@ private:
     std::atomic<float>* masterRelease = nullptr;
     std::array<std::atomic<float>*, 4> layerLevels {};
     std::array<std::atomic<float>*, 4> sourceParameters {};
+    std::array<std::atomic<float>*, 4> panParameters {}, octaveParameters {}, tuneParameters {};
+    std::array<std::atomic<float>*, 4> cutoffParameters {}, resonanceParameters {}, soloParameters {}, muteParameters {};
+    std::array<juce::dsp::StateVariableTPTFilter<float>, 4> layerFilters;
+    double preparedSampleRate = 0.0;
     std::array<std::array<std::atomic<float>*, 4>, 4> envelopeParameters {};
     juce::ADSR masterEnvelope;
     std::array<juce::ADSR, 4> layerEnvelopes;
@@ -271,6 +334,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetheriaProcessor::createPar
     const std::array<juce::String, 4> sourceNames { "A Source", "B Source", "C Source", "D Source" };
     const std::array<juce::String, 4> levelIds { "layerA", "layerB", "layerC", "layerD" };
     const std::array<juce::String, 4> levelNames { "A Sub / Body", "B Mid / Harmony", "C Attack", "D Air / Texture" };
+    const std::array<juce::String, 4> layerLetters { "A", "B", "C", "D" };
 
     for (size_t layer = 0; layer < 4; ++layer)
     {
@@ -280,7 +344,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetheriaProcessor::createPar
                                            levelNames[layer], 0.0f, 1.0f,
                                            layer == 0 ? 0.85f : (layer == 1 ? 0.55f : (layer == 2 ? 0.30f : 0.20f))));
 
-        const juce::String prefix = juce::String::charToString(static_cast<juce::juce_wchar>('A' + static_cast<int>(layer)));
+        const juce::String prefix = layerLetters[layer];
+        layout.add(std::make_unique<Float>(juce::ParameterID { "pan" + prefix, 1 }, prefix + " Pan", -1.0f, 1.0f, 0.0f));
+        layout.add(std::make_unique<Float>(juce::ParameterID { "octave" + prefix, 1 }, prefix + " Octave", -2.0f, 2.0f, 0.0f));
+        layout.add(std::make_unique<Float>(juce::ParameterID { "tune" + prefix, 1 }, prefix + " Fine Tune", -100.0f, 100.0f, 0.0f));
+        layout.add(std::make_unique<Float>(juce::ParameterID { "cutoff" + prefix, 1 }, prefix + " Filter Cutoff",
+                                           juce::NormalisableRange<float>(20.0f, 20000.0f, 1.0f, 0.25f), 18000.0f));
+        layout.add(std::make_unique<Float>(juce::ParameterID { "res" + prefix, 1 }, prefix + " Filter Resonance", 0.1f, 0.95f, 0.2f));
+        layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "solo" + prefix, 1 }, prefix + " Solo", false));
+        layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "mute" + prefix, 1 }, prefix + " Mute", false));
         const std::array<juce::String, 4> suffixes { "Attack", "Decay", "Sustain", "Release" };
         const std::array<float, 4> defaults {{
             layer == 0 ? 0.005f : (layer == 1 ? 0.02f : (layer == 2 ? 0.001f : 0.08f)),
