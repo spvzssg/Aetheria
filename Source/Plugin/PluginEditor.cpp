@@ -72,10 +72,6 @@ void AetheriaEditor::paint(juce::Graphics& g)
         juce::Colour(0xFFC65BFF), juce::Colour(0xFF687DFF)
     }};
 
-    const std::array<juce::String, 4> roles {
-        "A  SUB / BODY", "B  MID / HARMONY", "C  ATTACK / TRANSIENT", "D  AIR / TEXTURE"
-    };
-
     for (int i = 0; i < 4; ++i)
     {
         auto panel = juce::Rectangle<int>(28 + i * (panelWidth + panelGap),
@@ -86,9 +82,6 @@ void AetheriaEditor::paint(juce::Graphics& g)
         g.drawRoundedRectangle(panel.toFloat(), 9.0f, 1.2f);
         g.setColour(layerColours[static_cast<size_t>(i)]);
         g.fillRoundedRectangle(panel.removeFromTop(3).toFloat(), 1.5f);
-        g.setFont(juce::Font(juce::FontOptions(13.0f, juce::Font::bold)));
-        g.drawText(roles[static_cast<size_t>(i)], 36 + i * (panelWidth + panelGap),
-                   panelTop + 5, panelWidth - 16, 22, juce::Justification::centred);
     }
 
     auto footer = juce::Rectangle<int>(28, getHeight() - 132, getWidth() - 56, 100);
