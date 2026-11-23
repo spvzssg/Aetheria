@@ -124,7 +124,7 @@ public:
         for (size_t layer = 0; layer < gains.size(); ++layer)
         {
             gains[layer] = layerLevels[layer]->load();
-            sources[layer] = sourceParameters[layer] != nullptr ? juce::jlimit(0, 4, juce::roundToInt(sourceParameters[layer]->load() * 4.0f)) : 0;
+            sources[layer] = sourceParameters[layer] != nullptr ? juce::jlimit(0, 4, juce::roundToInt(sourceParameters[layer]->load())) : 0;
         }
 
         const int channels = output.getNumChannels();
