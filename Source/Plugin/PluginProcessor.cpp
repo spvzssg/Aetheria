@@ -262,7 +262,7 @@ public:
                     }
                 }
 
-                sourceSample = layerFilters[layer].processSample(static_cast<float>(sourceSample));
+                sourceSample = layerFilters[layer].processSample(0, static_cast<float>(sourceSample));
                 const float layerAmp = layerEnvelopes[layer].getNextSample();
                 if (enabled[layer])
                 {
