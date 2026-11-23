@@ -32,9 +32,9 @@ add_subdirectory("${JUCE_DIR}" "${CMAKE_BINARY_DIR}/JUCE")
 juce_add_plugin(Aetheria
     COMPANY_NAME "Spaz SsG"
     PLUGIN_MANUFACTURER_CODE SpSG
-    PLUGIN_CODE Aeth
-    PRODUCT_NAME "AETHERIA"
-    BUNDLE_ID com.spazssg.aetheria
+    PLUGIN_CODE AeP2
+    PRODUCT_NAME "AETHERIA Phase 2"
+    BUNDLE_ID com.spazssg.aetheria.phase2
     VERSION "${PROJECT_VERSION}"
     FORMATS VST3
     IS_SYNTH TRUE
