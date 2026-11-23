@@ -46,6 +46,9 @@ private:
     const std::array<juce::String, 8> buttonParameterIds {
         "soloA", "muteA", "soloB", "muteB", "soloC", "muteC", "soloD", "muteD"
     };
+    const std::array<juce::String, 4> sourceParameterIds {
+        "sourceA", "sourceB", "sourceC", "sourceD"
+    };
     const std::array<juce::StringArray, 4> sourceNames {{
         { "Sine Sub", "Triangle", "Saw", "Square", "Deep Sub" },
         { "Warm Saw", "Detuned Saw", "Pulse", "FM Keys", "Sine" },
